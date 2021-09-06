@@ -18,10 +18,11 @@ With CLI generates a Team profiles
 ## Usage
 -Execute "node index.js" in command line
 -Complete prompt
+-Link to usage video:
 ## Contribution
 Bootcamp and Aaron8907
 ## Test
-Execute "npm test" in command line
+Test is performed with jest, execute "npm test" in command line, view test video with following link:
 ## License
 The license is MIT License to see more information click on the badge at the top.
 ## Question
