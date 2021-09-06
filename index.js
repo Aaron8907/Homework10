@@ -1,108 +1,299 @@
+const Manager = require("./lib/Manager");
+const Engineer = require("./lib/Engineer");
+const Intern = require("./lib/Intern");
+const inquirer = require("inquirer");
+const path = require("path");
+const fs = require("fs");
 
-const inquirer = require('inquirer');
-const fs = require('fs');
+const OUTPUT_DIR = path.resolve(__dirname, "output")
+const outputPath = path.join(OUTPUT_DIR, "team.html");
 
-inquirer
- .prompt([
-    {
-       type: 'input',
-       name: 'title',
-       message: 'What is the project title?',
-    },
-    {
-        type: 'input',
-        name: 'description',
-        message: 'Write the description',
-    },
-    {
-        type: 'input',
-        name: 'installation',
-        message: 'Provide the installation instructions',
-    },
-    {
-        type: 'input',
-        name: 'usage',
-        message: 'Share the usage information',
-    },
-    {
-        type: 'input',
-        name: 'contribution',
-        message: 'Who contributed to your project?',
-    },
-    {
-        type: 'input ',
-        name: 'test',
-        message: 'Add the test instructions',
-    },
-    {
-       type: 'checkbox',
-       message: 'What license do you choose for this project?',
-       name: 'license',
-       choices: ['Apache-2.0', 'GNU-GPLv3', 'MIT', 'ISC-License','None'],
-    },
-    {
-        type: 'input',
-        name: 'gitHub',
-        message: 'What is your GitHub username?',
-    },
-    {
-        type: 'input',
-        name: 'email',
-        message: 'What is your email?',
-    },
+const render = require("./src/page-template.js");
 
-    
-])
-.then((information) => {
-    if(`${information.license}`==="Apache-2.0"){
-        information.license="[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://choosealicense.com/licenses/apache-2.0/)"  
-        license="Apache-2.0"
-        console.log(license)
-    }else if (`${information.license}`==="GNU-GPLv3"){
-        information.license="[![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](https://choosealicense.com/licenses/gpl-3.0/)" 
-        license="GNU-GPLv3"   
-        console.log(license)
-    }else if(`${information.license}`==="MIT"){
-        information.license="[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://choosealicense.com/licenses/mit/)"   
-        license="MIT"
-        console.log(license)
-    }else if(`${information.license}`==="ISC-License"){
-        information.license="[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://choosealicense.com/licenses/isc/)" 
-        license="ISC License"  
-        console.log(license)
+const teamMembers = [];
+const idArray = [];
+
+function appMenu() {
+
+  function createManager() {
+    console.log("Please build your team");
+    inquirer.prompt([
+      {
+        type: "input",
+        name: "managerName",
+        message: "What is the team manager's name?",
+        validate: answer => {
+          if (answer !== "") {
+            return true;
+          }
+          return "Please enter at least one character.";
+        }
+      },
+      {
+        type: "input",
+        name: "managerId",
+        message: "What is the team manager's id?",
+        validate: answer => {
+          const pass = answer.match(
+            /^[1-9]\d*$/
+          );
+          if (pass) {
+            return true;
+          }
+          return "Please enter a positive number greater than zero.";
+        }
+      },
+      {
+        type: "input",
+        name: "managerEmail",
+        message: "What is the team manager's email?",
+        validate: answer => {
+          const pass = answer.match(
+            /\S+@\S+\.\S+/
+          );
+          if (pass) {
+            return true;
+          }
+          return "Please enter a valid email address.";
+        }
+      },
+      {
+        type: "input",
+        name: "managerOfficeNumber",
+        message: "What is the team manager's office number?",
+        validate: answer => {
+          const pass = answer.match(
+            /^[1-9]\d*$/
+          );
+          if (pass) {
+            return true;
+          }
+          return "Please enter a positive number greater than zero.";
+        }
+      },
+      {
+        type: "input",
+        name: "managerPic",
+        message: "Share path for manager picture",
+      },
+      {
+      type: "input",
+      name: "managerResps",
+      message: "What are the manager responsibilities",
+      validate: answer => {
+        if (answer !== "") {
+          return true;
+        }
+        return "Please enter the manager responsibiltiies.";
+      }
     }
-    
-    const readMeContent = generateREADME(information);
+    ]).then(answers => {
+      const manager = new Manager(answers.managerName, answers.managerId, answers.managerEmail, answers.managerPic,answers.managerResps, answers.managerOfficeNumber);
+      teamMembers.push(manager); 
+      idArray.push(answers.managerId);
+      createTeam();
+    });
+  }
 
-fs.writeFile('README.md',readMeContent, (err) =>
- err ? console.log(err) : console.log('Successfully created README.md!')
-);
-});
-const generateREADME = (information) =>
-`${information.license}
-# ${information.title}
-## Description
-${information.description}
-## Table of Contents
-- [Installation](#installation)
-- [Usage](#usage)
-- [Contribution](#contribution)
-- [Test](#test)
-- [License](#license)
-- [Questions](#questions)
-## Installation
-${information.installation}
-## Usage
-${information.usage}
-## Contribution
-${information.contribution}
-## Test
-${information.test}
-## License
-The license is ${license} to see more information click on the badge at the top.
-## Questions
--Email: ${information.email}\n
--GitHub: ${information.gitHub}`;
+  function createTeam() {
 
+    inquirer.prompt([
+      {
+        type: "list",
+        name: "memberChoice",
+        message: "Which type of team member would you like to add?",
+        choices: [
+          "Engineer",
+          "Intern",
+          "I don't want to add any more team members"
+        ]
+      }
+    ]).then(userChoice => {
+      switch (userChoice.memberChoice) {
+        case "Engineer":
+          addEngineer();
+          break;
+        case "Intern":
+          addIntern();
+          break;
+        default:
+          buildTeam();
+      }
+    });
+  }
 
+  function addEngineer() {
+    inquirer.prompt([
+      {
+        type: "input",
+        name: "engineerName",
+        message: "What is your engineer's name?",
+        validate: answer => {
+          if (answer !== "") {
+            return true;
+          }
+          return "Please enter at least one character.";
+        }
+      },
+      {
+        type: "input",
+        name: "engineerId",
+        message: "What is your engineer's id?",
+        validate: answer => {
+          const pass = answer.match(
+            /^[1-9]\d*$/
+          );
+          if (pass) {
+            if (idArray.includes(answer)) {
+              return "This ID is already taken. Please enter a different number.";
+            } else {
+              return true;
+            }
 
+          }
+          return "Please enter a positive number greater than zero.";
+        }
+      },
+      {
+        type: "input",
+        name: "engineerEmail",
+        message: "What is your engineer's email?",
+        validate: answer => {
+          const pass = answer.match(
+            /\S+@\S+\.\S+/
+          );
+          if (pass) {
+            return true;
+          }
+          return "Please enter a valid email address.";
+        }
+      },
+      {
+        type: "input",
+        name: "engineerGithub",
+        message: "What is your engineer's GitHub username?",
+        validate: answer => {
+          if (answer !== "") {
+            return true;
+          }
+          return "Please enter at least one character.";
+        }
+      },
+      {
+        type: "input",
+        name: "engineerPic",
+        message: "Share path for engineer picture",
+      },
+      {
+        type: "input",
+        name: "engineerResps",
+        message: "What are the engineer responsibilities",
+        validate: answer => {
+          if (answer !== "") {
+            return true;
+          }
+          return "Please enter the engineer responsibiltiies.";
+        }
+      }
+    ]).then(answers => {
+      const engineer = new Engineer(answers.engineerName, answers.engineerId, answers.engineerEmail,answers.engineerPic,answers.engineerResps, answers.engineerGithub );
+      teamMembers.push(engineer);
+      idArray.push(answers.engineerId);
+      createTeam();
+    });
+  }
+
+  function addIntern() {
+    inquirer.prompt([
+      {
+        type: "input",
+        name: "internName",
+        message: "What is your intern's name?",
+        validate: answer => {
+          if (answer !== "") {
+            return true;
+          }
+          return "Please enter at least one character.";
+        }
+      },
+      {
+        type: "input",
+        name: "internId",
+        message: "What is your intern's id?",
+        validate: answer => {
+          const pass = answer.match(
+            /^[1-9]\d*$/
+          );
+          if (pass) {
+            if (idArray.includes(answer)) {
+              return "This ID is already taken. Please enter a different number.";
+            } else {
+              return true;
+            }
+
+          }
+          return "Please enter a positive number greater than zero.";
+        }
+      },
+      {
+        type: "input",
+        name: "internEmail",
+        message: "What is your intern's email?",
+        validate: answer => {
+          const pass = answer.match(
+            /\S+@\S+\.\S+/
+          );
+          if (pass) {
+            return true;
+          }
+          return "Please enter a valid email address.";
+        }
+      },
+      {
+        type: "input",
+        name: "internSchool",
+        message: "What is your intern's school?",
+        validate: answer => {
+          if (answer !== "") {
+            return true;
+          }
+          return "Please enter at least one character.";
+        }
+      },
+      {
+        type: "input",
+        name: "internPic",
+        message: "Share path for intern pic",
+        },
+        {
+          type: "input",
+          name: "internResps",
+          message: "What are the intern responsibilities",
+          validate: answer => {
+            if (answer !== "") {
+              return true;
+            }
+            return "Please enter the intern responsibiltiies.";
+          }
+        }
+    ]).then(answers => {
+      const intern = new Intern(answers.internName, answers.internId, answers.internEmail,answers.internPic,answers.internResps, answers.internSchool);
+      teamMembers.push(intern);
+      idArray.push(answers.internId);
+      createTeam();
+    });
+  }
+
+  function buildTeam() {
+    // Create the output directory if the output path doesn't exist
+    if (!fs.existsSync(OUTPUT_DIR)) {
+      fs.mkdirSync(OUTPUT_DIR)
+    }
+    fs.writeFileSync(outputPath, render(teamMembers), "utf-8");
+  }
+
+  createManager();
+
+}
+
+appMenu();
