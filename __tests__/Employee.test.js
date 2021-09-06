@@ -41,6 +41,12 @@ test("Can get email via getEmail()", () => {
   expect(e.getEmail()).toBe(testValue);
 });
 
+test("Can get picure via getPicture()", () => {
+  const testValue = "test.jpg";
+  const e = new Employee("Foo", 1,"email", testValue,);
+  expect(e.getPicture()).toBe(testValue);
+});
+
 test("getRole() should return \"Employee\"", () => {
   const testValue = "Employee";
   const e = new Employee("Alice", 1, "test@test.com");
